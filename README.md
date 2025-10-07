@@ -1,6 +1,96 @@
 # Getting Started with Create React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Invoicing ROI Simulator
+=======================
+
+This repository contains a single-page React app and a lightweight Express backend that together provide an ROI calculator for switching from manual to automated invoicing. It supports live simulations, scenario CRUD (save/load/delete), and an email-gated downloadable report.
+
+Quick Start
+-----------
+
+1. Install dependencies:
+
+```
+npm install
+```
+
+2. Set up environment variables (MongoDB): create a `.env` file in `returninvest/` with:
+
+```
+MONGODB_URI=mongodb://127.0.0.1:27017/roi_simulator
+```
+
+3. Start the backend API (port 4000):
+
+```
+npm run server
+```
+
+4. In a second terminal, start the React app (port 3000):
+
+```
+npm start
+```
+
+Alternatively, if you install `concurrently`, you can run both with:
+
+```
+npm run dev
+```
+
+Endpoints
+---------
+
+- POST `/simulate` — run simulation with inputs
+- POST `/scenarios` — save a scenario
+- GET `/scenarios` — list scenarios
+- GET `/scenarios/:id` — fetch scenario
+- DELETE `/scenarios/:id` — delete scenario
+- POST `/report/generate` — generate report (requires `email`)
+
+Data Storage
+------------
+
+- MongoDB database (default URI: `mongodb://127.0.0.1:27017/roi_simulator`). Configure via `.env`.
+
+Notes
+-----
+
+- The UI auto-simulates on input changes.
+- Report is generated as an HTML file and downloaded to your machine; enter your email to enable the download.
+
+Deployment
+----------
+
+Single service (backend serves frontend):
+
+1. Build the frontend:
+
+```
+npm run build
+```
+
+2. Ensure `.env` contains your production `MONGODB_URI` (e.g., MongoDB Atlas connection string).
+
+3. Start the server locally to verify it serves the build:
+
+```
+npm run server
+```
+
+4. Deploy to a Node hosting provider (e.g., Render):
+   - Create a Web Service from this repo
+   - Build command: `npm install && npm run build`
+   - Start command: `node server/index.js`
+   - Env vars: set `MONGODB_URI` to your Atlas URI
+
+MongoDB Atlas setup:
+
+- Create an Atlas cluster, add your IP to Network Access, create a database user, and copy the connection string. Replace `<password>` and set `MONGODB_URI`.
+
+Separate services (optional):
+
+- If you prefer separate hosting, deploy the backend as above, and host the React build on static hosting (e.g., Netlify). Update the frontend to call the deployed API URL instead of relying on CRA proxy.
 
 ## Available Scripts
 
