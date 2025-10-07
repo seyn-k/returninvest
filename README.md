@@ -78,11 +78,36 @@ npm run build
 npm run server
 ```
 
+Or run the dedicated hosting entry (uses PORT=8080 by default):
+
+```
+npm run host
+```
+
 4. Deploy to a Node hosting provider (e.g., Render):
    - Create a Web Service from this repo
    - Build command: `npm install && npm run build`
-   - Start command: `node server/index.js`
+   - Start command (MongoDB): `node server/hosting.js`
+   - Start command (PostgreSQL): `node server/index.pg.js`
    - Env vars: set `MONGODB_URI` to your Atlas URI
+    - Or set `DATABASE_URL` (Render Postgres) and optionally `DATABASE_SSL=false` if not needed
+
+PostgreSQL (Render) quick setup
+-------------------------------
+
+1. In Render PostgreSQL settings, copy the Internal Database URL and set it as `DATABASE_URL` in your service env vars.
+2. Ensure SSL works; if your environment doesn't require SSL, set `DATABASE_SSL=false`.
+3. Use the Postgres server entry locally:
+
+```
+npm run server:pg
+```
+
+or in hosting with the React build served by the same process:
+
+```
+node server/index.pg.js
+```
 
 MongoDB Atlas setup:
 

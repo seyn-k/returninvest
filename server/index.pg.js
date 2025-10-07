@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 4000;
 app.use(cors());
 app.use(express.json());
 
-// PostgreSQL setup (replaces MongoDB storage)
+// PostgreSQL setup
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false }
@@ -97,7 +97,6 @@ app.post('/scenarios', async (req, res) => {
   const results = simulate(inputs);
 
   try {
-    // Ensure a visible scenario name
     let scenarioName = (inputs.scenario_name || '').trim();
     if (!scenarioName) {
       const countRes = await pool.query('SELECT COUNT(1) AS c FROM scenarios');
@@ -147,7 +146,7 @@ app.delete('/scenarios/:id', async (req, res) => {
   }
 });
 
-app.post('/report/generate', (req, res) => {
+app.post('/report/generate', async (req, res) => {
   const email = (req.body && req.body.email) ? String(req.body.email).trim() : '';
   if (!email) return res.status(400).json({ error: 'email is required' });
 
@@ -171,6 +170,7 @@ app.post('/report/generate', (req, res) => {
   } else {
     return res.status(400).json({ error: 'provide scenario_id or inputs' });
   }
+
   const html = `<!doctype html><html><head><meta charset="utf-8"><title>ROI Report</title>
     <style>body{font-family:Arial, sans-serif; padding:24px; color:#222} h1{color:#0b3a5b}
     table{border-collapse:collapse} td,th{border:1px solid #ddd; padding:8px}</style></head>
@@ -201,7 +201,7 @@ app.post('/report/generate', (req, res) => {
   return res.json({ filename: `roi-report-${Date.now()}.html`, content: html });
 });
 
-// Serve React build in production (single-service deploy)
+// Serve React build in production
 const clientBuildPath = path.join(__dirname, '..', 'build');
 if (fs.existsSync(clientBuildPath)) {
   app.use(express.static(clientBuildPath));
@@ -212,7 +212,6 @@ if (fs.existsSync(clientBuildPath)) {
 
 async function start() {
   try {
-    // Ensure table exists
     await pool.query(`
       CREATE TABLE IF NOT EXISTS scenarios (
         id UUID PRIMARY KEY,
@@ -225,7 +224,7 @@ async function start() {
       CREATE INDEX IF NOT EXISTS scenarios_created_at_idx ON scenarios (created_at DESC);
     `);
     app.listen(PORT, () => {
-      console.log(`API server listening on http://localhost:${PORT}`);
+      console.log(`PostgreSQL API server listening on http://localhost:${PORT}`);
     });
   } catch (e) {
     console.error('Failed to initialize PostgreSQL', e);
