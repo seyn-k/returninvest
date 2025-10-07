@@ -137,39 +137,39 @@ function App() {
           <h2>Inputs</h2>
           <div className="form-grid">
             <div className="field">
-              <label>Scenario Name</label>
+              <label>scenario_name</label>
               <input className="input" name="scenario_name" value={inputs.scenario_name} onChange={onChange} placeholder="Q4_Pilot" />
             </div>
             <div className="field">
-              <label>Monthly Invoice Volume</label>
+              <label>monthly_invoice_volume</label>
               <input className="input" name="monthly_invoice_volume" type="number" value={inputs.monthly_invoice_volume} onChange={onChange} />
             </div>
             <div className="field">
-              <label>AP Staff</label>
+              <label>num_ap_staff</label>
               <input className="input" name="num_ap_staff" type="number" value={inputs.num_ap_staff} onChange={onChange} />
             </div>
             <div className="field">
-              <label>Hours/Invoice</label>
+              <label>avg_hours_per_invoice</label>
               <input className="input" name="avg_hours_per_invoice" type="number" step="0.01" value={inputs.avg_hours_per_invoice} onChange={onChange} />
             </div>
             <div className="field">
-              <label>Hourly Wage ($)</label>
+              <label>hourly_wage</label>
               <input className="input" name="hourly_wage" type="number" value={inputs.hourly_wage} onChange={onChange} />
             </div>
             <div className="field">
-              <label>Manual Error Rate (%)</label>
+              <label>error_rate_manual</label>
               <input className="input" name="error_rate_manual" type="number" step="0.01" value={inputs.error_rate_manual} onChange={onChange} />
             </div>
             <div className="field">
-              <label>Error Cost ($)</label>
+              <label>error_cost</label>
               <input className="input" name="error_cost" type="number" value={inputs.error_cost} onChange={onChange} />
             </div>
             <div className="field">
-              <label>Time Horizon (months)</label>
+              <label>time_horizon_months</label>
               <input className="input" name="time_horizon_months" type="number" value={inputs.time_horizon_months} onChange={onChange} />
             </div>
             <div className="field">
-              <label>One-time Cost ($)</label>
+              <label>one_time_implementation_cost</label>
               <input className="input" name="one_time_implementation_cost" type="number" value={inputs.one_time_implementation_cost} onChange={onChange} />
             </div>
           </div>
