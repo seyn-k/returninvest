@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB setup (replaces JSON file storage)
-const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/roi_simulator';
+const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://senthiltr2004:12345@cluster1.y2nguv9.mongodb.net/roi_simulator?retryWrites=true&w=majority';
 
 const scenarioSchema = new mongoose.Schema({
   scenario_name: { type: String, index: true },
@@ -113,9 +113,14 @@ app.post('/simulate', (req, res) => {
 });
 
 app.post('/scenarios', async (req, res) => {
+  console.log('📝 POST /scenarios - Received request');
   const { inputs, errors } = validateInputs(req.body?.inputs || req.body || {});
-  if (errors.length) return res.status(400).json({ errors });
+  if (errors.length) {
+    console.log('❌ Validation errors:', errors);
+    return res.status(400).json({ errors });
+  }
   const results = simulate(inputs);
+  console.log('📊 Simulation results:', results);
 
   try {
     // Ensure a visible scenario name
@@ -124,19 +129,28 @@ app.post('/scenarios', async (req, res) => {
       const count = await Scenario.countDocuments();
       scenarioName = `Scenario ${count + 1}`;
     }
+    console.log('💾 Saving scenario:', scenarioName);
+    
     // Persist the name both at root and inside inputs for consistency
     const doc = await Scenario.create({ scenario_name: scenarioName, inputs: { ...inputs, scenario_name: scenarioName }, results });
+    console.log('✅ Scenario saved successfully:', doc._id);
     return res.json({ id: String(doc._id), scenario_name: doc.scenario_name || '' });
   } catch (e) {
+    console.error('❌ Failed to save scenario:', e.message);
     return res.status(500).json({ error: 'failed to save scenario' });
   }
 });
 
 app.get('/scenarios', async (req, res) => {
   try {
+    console.log('📋 GET /scenarios - Fetching scenarios');
     const docs = await Scenario.find({}, { scenario_name: 1, created_at: 1 }).sort({ created_at: -1 }).lean();
-    return res.json(docs.map(d => ({ id: String(d._id), scenario_name: d.scenario_name || '', created_at: d.created_at })));
+    console.log('📋 Found scenarios:', docs.length);
+    const result = docs.map(d => ({ id: String(d._id), scenario_name: d.scenario_name || '', created_at: d.created_at }));
+    console.log('📋 Returning scenarios:', result);
+    return res.json(result);
   } catch (e) {
+    console.error('❌ Failed to fetch scenarios:', e.message);
     return res.status(500).json({ error: 'failed to list scenarios' });
   }
 });
@@ -252,15 +266,25 @@ if (fs.existsSync(clientBuildPath)) {
 
 async function start() {
   try {
-    await mongoose.connect(mongoUri, { dbName: mongoUri.split('/').pop() });
-    console.log('Connected to MongoDB');
+    console.log('Attempting to connect to MongoDB...');
+    console.log('Connection string:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
+    await mongoose.connect(mongoUri, { dbName: 'roi_simulator' });
+    console.log('✅ Connected to MongoDB successfully');
     app.listen(PORT, () => {
-      console.log(`API server listening on http://localhost:${PORT}`);
+      console.log(`🚀 API server listening on http://localhost:${PORT}`);
     });
   } catch (e) {
-    console.error('Failed to connect to MongoDB', e);
+    console.error('❌ Failed to connect to MongoDB:', e.message);
     process.exit(1);
   }
 }
 
-start();
+// For Vercel deployment
+if (process.env.NODE_ENV === 'production') {
+  start();
+} else {
+  start();
+}
+
+// Export for Vercel
+module.exports = app;

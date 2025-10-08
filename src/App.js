@@ -30,8 +30,8 @@ function App() {
   useEffect(() => {
     fetch('/scenarios')
       .then(r => r.json())
-      .then(setScenarios)
-      .catch(() => {});
+      .then(data => setScenarios(Array.isArray(data) ? data : []))
+      .catch(() => setScenarios([]));
   }, []);
 
   useEffect(() => {
