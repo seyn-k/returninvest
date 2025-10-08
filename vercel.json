@@ -15,6 +15,10 @@
   ],
   "routes": [
     {
+      "src": "/test",
+      "dest": "/api/index.js"
+    },
+    {
       "src": "/scenarios(.*)",
       "dest": "/api/index.js"
     },
