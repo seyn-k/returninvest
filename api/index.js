@@ -1,18 +1,15 @@
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 4000;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB setup (replaces JSON file storage)
+// MongoDB setup
 const mongoUri = process.env.MONGODB_URI || 'mongodb+srv://senthiltr2004:12345@cluster1.y2nguv9.mongodb.net/roi_simulator?retryWrites=true&w=majority';
 
 const scenarioSchema = new mongoose.Schema({
@@ -39,11 +36,11 @@ const scenarioSchema = new mongoose.Schema({
 
 const Scenario = mongoose.model('Scenario', scenarioSchema);
 
-// Internal constants (server-side only)
+// Internal constants
 const INTERNAL = {
   automated_cost_per_invoice: 0.20,
-  error_rate_auto: 0.1, // percent
-  time_saved_per_invoice: 8, // minutes
+  error_rate_auto: 0.1,
+  time_saved_per_invoice: 8,
   min_roi_boost_factor: 1.1
 };
 
@@ -86,7 +83,7 @@ function validateInputs(body) {
 function simulate(inputs) {
   const labor_cost_manual = inputs.num_ap_staff * inputs.hourly_wage * inputs.avg_hours_per_invoice * inputs.monthly_invoice_volume;
   const auto_cost = inputs.monthly_invoice_volume * INTERNAL.automated_cost_per_invoice;
-  const error_savings = (inputs.error_rate_manual - INTERNAL.error_rate_auto) * inputs.monthly_invoice_volume * inputs.error_cost / 100; // percent to fraction
+  const error_savings = (inputs.error_rate_manual - INTERNAL.error_rate_auto) * inputs.monthly_invoice_volume * inputs.error_cost / 100;
   let monthly_savings = (labor_cost_manual + error_savings) - auto_cost;
   monthly_savings = monthly_savings * INTERNAL.min_roi_boost_factor;
 
@@ -102,6 +99,16 @@ function simulate(inputs) {
     payback_months: payback_months === null ? null : Number(payback_months.toFixed(2)),
     roi_percentage: Number(roi_percentage.toFixed(2))
   };
+}
+
+// Connect to MongoDB
+async function connectDB() {
+  try {
+    await mongoose.connect(mongoUri, { dbName: 'roi_simulator' });
+    console.log('Connected to MongoDB');
+  } catch (e) {
+    console.error('Failed to connect to MongoDB:', e.message);
+  }
 }
 
 // Routes
@@ -123,7 +130,6 @@ app.post('/scenarios', async (req, res) => {
   console.log('📊 Simulation results:', results);
 
   try {
-    // Ensure a visible scenario name
     let scenarioName = (inputs.scenario_name || '').trim();
     if (!scenarioName) {
       const count = await Scenario.countDocuments();
@@ -131,7 +137,6 @@ app.post('/scenarios', async (req, res) => {
     }
     console.log('💾 Saving scenario:', scenarioName);
     
-    // Persist the name both at root and inside inputs for consistency
     const doc = await Scenario.create({ scenario_name: scenarioName, inputs: { ...inputs, scenario_name: scenarioName }, results });
     console.log('✅ Scenario saved successfully:', doc._id);
     return res.json({ id: String(doc._id), scenario_name: doc.scenario_name || '' });
@@ -182,7 +187,6 @@ app.post('/report/generate', (req, res) => {
   let inputs;
   let results;
   if (req.body && req.body.scenario_id) {
-    // Load scenario from MongoDB
     return Scenario.findById(req.body.scenario_id).lean().then(doc => {
       if (!doc) return res.status(404).json({ error: 'scenario not found' });
       inputs = doc.inputs;
@@ -255,36 +259,7 @@ app.post('/report/generate', (req, res) => {
   return res.json({ filename: `roi-report-${Date.now()}.html`, content: html });
 });
 
-// Serve React build in production (single-service deploy)
-const clientBuildPath = path.join(__dirname, '..', 'build');
-if (fs.existsSync(clientBuildPath)) {
-  app.use(express.static(clientBuildPath));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(clientBuildPath, 'index.html'));
-  });
-}
+// Initialize MongoDB connection
+connectDB();
 
-async function start() {
-  try {
-    console.log('Attempting to connect to MongoDB...');
-    console.log('Connection string:', mongoUri.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
-    await mongoose.connect(mongoUri, { dbName: 'roi_simulator' });
-    console.log('✅ Connected to MongoDB successfully');
-    app.listen(PORT, () => {
-      console.log(`🚀 API server listening on http://localhost:${PORT}`);
-    });
-  } catch (e) {
-    console.error('❌ Failed to connect to MongoDB:', e.message);
-    process.exit(1);
-  }
-}
-
-// For Vercel deployment
-if (process.env.NODE_ENV === 'production') {
-  // Don't start server in production - Vercel handles this
-} else {
-  start();
-}
-
-// Export for Vercel
 module.exports = app;
